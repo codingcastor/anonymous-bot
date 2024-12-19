@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import requests
 from urllib.parse import parse_qs
 
 class handler(BaseHTTPRequestHandler):
@@ -24,15 +25,23 @@ class handler(BaseHTTPRequestHandler):
             'api_app_id': params.get('api_app_id', [''])[0]
         }
 
-        # Prepare response
-        response = {
-            'response_type': 'ephemeral',  # or 'in_channel' for visible to all
+        # Send immediate response
+        immediate_response = {
+            'response_type': 'ephemeral',
             'text': f"Ton message va être rendu anonyme et posté incessamment sous peu"
         }
-
-        # Send response
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.wfile.write(json.dumps(response).encode('utf-8'))
+        self.wfile.write(json.dumps(immediate_response).encode('utf-8'))
+
+        # Send delayed response to response_url
+        delayed_response = {
+            'response_type': 'in_channel',
+            'text': slack_params['text']
+        }
+        requests.post(
+            slack_params['response_url'],
+            json=delayed_response
+        )
         return
