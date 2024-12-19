@@ -3,13 +3,6 @@ import json
 from urllib.parse import parse_qs
 
 class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type','text/plain')
-        self.end_headers()
-        self.wfile.write('Hello, world!'.encode('utf-8'))
-        return
-
     def do_POST(self):
         # Get content length to read the body
         content_length = int(self.headers['Content-Length'])
@@ -34,7 +27,7 @@ class handler(BaseHTTPRequestHandler):
         # Prepare response
         response = {
             'response_type': 'ephemeral',  # or 'in_channel' for visible to all
-            'text': f"Received command: {slack_params['command']}\nWith text: {slack_params['text']}"
+            'text': f"Ton message va être rendu anonyme et posté incessamment sous peu"
         }
 
         # Send response
