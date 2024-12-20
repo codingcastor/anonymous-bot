@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 import os
 import psycopg2
 from datetime import datetime
+from http.server import HTTPServer
 
 def get_db_connection():
     """Get a PostgreSQL database connection"""
@@ -33,7 +34,7 @@ class handler(BaseHTTPRequestHandler):
         
         # Parse form data
         params = parse_qs(post_data)
-        
+        print(params)
         # Extract Slack command parameters
         slack_params = {
             'command': params.get('command', [''])[0],
@@ -41,7 +42,7 @@ class handler(BaseHTTPRequestHandler):
             'response_url': params.get('response_url', [''])[0],
             'trigger_id': params.get('trigger_id', [''])[0],
             'user_id': params.get('user_id', [''])[0],
-            'user_name': params.get('user_name', ['']),
+            'user_name': params.get('user_name', [''])[0],
             'team_id': params.get('team_id', [''])[0],
             'enterprise_id': params.get('enterprise_id', [''])[0],
             'channel_id': params.get('channel_id', [''])[0],
@@ -59,7 +60,7 @@ class handler(BaseHTTPRequestHandler):
         store_message(
             slack_params['text'],
             slack_params['user_id'],
-            slack_params['user_name'][0],  # user_name is a list
+            slack_params['user_name'],  # user_name is a list
             slack_params['channel_id'],
             slack_params['channel_name']
         )
