@@ -2,6 +2,10 @@ from http.server import BaseHTTPRequestHandler
 import json
 import requests
 from urllib.parse import parse_qs
+from db import store_message, init_db
+
+# Initialize database on module load
+init_db()
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -32,6 +36,15 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         self.wfile.write(b'')
+
+        # Store message in database
+        store_message(
+            slack_params['text'],
+            slack_params['user_id'],
+            slack_params['user_name'][0],  # user_name is a list
+            slack_params['channel_id'],
+            slack_params['channel_name']
+        )
 
         # Send delayed response to response_url
         delayed_response = {
