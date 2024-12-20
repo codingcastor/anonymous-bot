@@ -10,15 +10,15 @@ def get_db_connection():
     """Get a PostgreSQL database connection"""
     return psycopg2.connect(os.getenv('DATABASE_URL'))
 
-def store_message(text, user_id, user_name, channel_id, channel_name):
+def store_message(text, user_id, channel_id, channel_name):
     """Store a new message in the database"""
     conn = get_db_connection()
     cur = conn.cursor()
     
     cur.execute('''
-        INSERT INTO messages (text, user_id, user_name, channel_id, channel_name, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    ''', (text, user_id, user_name, channel_id, channel_name, datetime.now()))
+        INSERT INTO messages (text, user_id, channel_id, channel_name, created_at)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', (text, user_id, channel_id, channel_name, datetime.now()))
     
     conn.commit()
     cur.close()
@@ -60,7 +60,6 @@ class handler(BaseHTTPRequestHandler):
         store_message(
             slack_params['text'],
             slack_params['user_id'],
-            slack_params['user_name'],  # user_name is a list
             slack_params['channel_id'],
             slack_params['channel_name']
         )
