@@ -28,7 +28,7 @@ class handler(BaseHTTPRequestHandler):
         # Send immediate response
         immediate_response = {
             'response_type': 'ephemeral',
-            'text': f"Ton message va être rendu anonyme et posté incessamment sous peu"
+            'text': ""
         }
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
