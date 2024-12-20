@@ -38,7 +38,6 @@ class handler(BaseHTTPRequestHandler):
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
-            'text': slack_params['text']
         }
         requests.post(
             slack_params['response_url'],
