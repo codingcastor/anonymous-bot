@@ -2,10 +2,8 @@ from http.server import BaseHTTPRequestHandler
 import json
 import requests
 from urllib.parse import parse_qs
-from db import store_message, init_db
+from db import store_message
 
-# Initialize database on module load
-init_db()
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
