@@ -25,7 +25,11 @@ class handler(BaseHTTPRequestHandler):
             'api_app_id': params.get('api_app_id', [''])[0]
         }
 
+        # Send immediate empty 200 response
         self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'')
 
         # Send delayed response to response_url
         delayed_response = {
