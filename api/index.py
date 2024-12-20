@@ -25,19 +25,12 @@ class handler(BaseHTTPRequestHandler):
             'api_app_id': params.get('api_app_id', [''])[0]
         }
 
-        # Send immediate response
-        immediate_response = {
-            'response_type': 'ephemeral',
-            'text': ""
-        }
         self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(immediate_response).encode('utf-8'))
 
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
+            'text': slack_params['text']
         }
         requests.post(
             slack_params['response_url'],
