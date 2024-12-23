@@ -54,10 +54,8 @@ class handler(BaseHTTPRequestHandler):
         # Verify request is from Slack
         timestamp = self.headers.get('X-Slack-Request-Timestamp')
         signature = self.headers.get('X-Slack-Signature')
-        print(signature)
 
         if not timestamp or not signature or not verify_slack_request(timestamp, post_data, signature):
-            print("there")
             self.send_response(401)
             self.end_headers()
             return
@@ -87,7 +85,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Store text in database only if it is not a private message
         store_message(
-            slack_params['text'] if slack_params['channel_name'] == 'directmessage' else '<REDACTED>',
+            slack_params['text'] if slack_params['channel_name'] != 'directmessage' else '<REDACTED>',
             slack_params['user_id'],
             slack_params['channel_id'],
             slack_params['channel_name']
