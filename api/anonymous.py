@@ -4,12 +4,28 @@ from urllib.parse import parse_qs
 import os
 import psycopg2
 from datetime import datetime
+import hmac
+import hashlib
 
 
 def get_db_connection():
     """Get a PostgreSQL database connection"""
     return psycopg2.connect(os.getenv('DATABASE_URL'))
 
+
+def verify_slack_request(timestamp, body, signature):
+    """Verify that the request actually came from Slack"""
+    if abs(datetime.now().timestamp() - int(timestamp)) > 60 * 5:
+        return False
+        
+    sig_basestring = f"v0:{timestamp}:{body}".encode('utf-8')
+    my_signature = 'v0=' + hmac.new(
+        os.getenv('SLACK_SIGNING_SECRET').encode('utf-8'),
+        sig_basestring,
+        hashlib.sha256
+    ).hexdigest()
+    
+    return hmac.compare_digest(my_signature, signature)
 
 def store_message(text, user_id, channel_id, channel_name):
     """Store a new message in the database"""
@@ -31,6 +47,15 @@ class handler(BaseHTTPRequestHandler):
         # Get content length to read the body
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
+        
+        # Verify request is from Slack
+        timestamp = self.headers.get('X-Slack-Request-Timestamp')
+        signature = self.headers.get('X-Slack-Signature')
+        
+        if not timestamp or not signature or not verify_slack_request(timestamp, post_data, signature):
+            self.send_response(401)
+            self.end_headers()
+            return
 
         # Parse form data
         params = parse_qs(post_data)
