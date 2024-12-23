@@ -4,26 +4,26 @@ from urllib.parse import parse_qs
 import os
 import psycopg2
 from datetime import datetime
-from http.server import HTTPServer
+
 
 def get_db_connection():
     """Get a PostgreSQL database connection"""
     return psycopg2.connect(os.getenv('DATABASE_URL'))
 
+
 def store_message(text, user_id, channel_id, channel_name):
     """Store a new message in the database"""
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     cur.execute('''
         INSERT INTO messages (text, user_id, channel_id, channel_name, created_at)
         VALUES (%s, %s, %s, %s, %s)
     ''', (text, user_id, channel_id, channel_name, datetime.now()))
-    
+
     conn.commit()
     cur.close()
     conn.close()
-
 
 
 class handler(BaseHTTPRequestHandler):
@@ -31,7 +31,7 @@ class handler(BaseHTTPRequestHandler):
         # Get content length to read the body
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
-        
+
         # Parse form data
         params = parse_qs(post_data)
         print(params)
@@ -56,9 +56,9 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'')
 
-        # Store message in database
+        # Store text in database only if it is not a private message
         store_message(
-            slack_params['text'],
+            slack_params['text'] if slack_params['channel_name'] == 'directmessage' else '<REDACTED>',
             slack_params['user_id'],
             slack_params['channel_id'],
             slack_params['channel_name']
