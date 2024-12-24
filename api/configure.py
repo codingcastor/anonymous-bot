@@ -1,8 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 import os
-from lib.slack import verify_slack_request, is_admin
-from lib.channel import update_channel_mode
+from lib.slack import verify_slack_request
+from lib.database import update_channel_mode, is_admin
 from lib.types import ChannelMode
 
 
@@ -77,7 +77,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        
+
         response = {
             'response_type': 'in_channel',
             'text': f"Channel mode has been set to: {mode.value}"

@@ -2,24 +2,8 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-from datetime import datetime
-from lib.database import get_db_connection
+from lib.database import store_message
 from lib.slack import verify_slack_request
-
-
-def store_message(text, user_id, channel_id, channel_name):
-    """Store a new message in the database"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute('''
-        INSERT INTO messages (text, user_id, channel_id, channel_name, created_at)
-        VALUES (%s, %s, %s, %s, %s)
-    ''', (text, user_id, channel_id, channel_name, datetime.now()))
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
 
 class handler(BaseHTTPRequestHandler):
