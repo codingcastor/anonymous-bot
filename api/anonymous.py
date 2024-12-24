@@ -2,8 +2,11 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-from lib.database import store_message
+import asyncio
+from lib.database import store_message, get_db_connection
 from lib.slack import verify_slack_request
+from lib.openai import generate_response
+from lib.types import ChannelMode
 
 
 class handler(BaseHTTPRequestHandler):
@@ -45,9 +48,39 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'')
 
-        # Store text in database only if it is not a private message
+        # Get channel mode
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT mode FROM channel_configs WHERE channel_id = %s', (slack_params['channel_id'],))
+        result = cur.fetchone()
+        channel_mode = ChannelMode(result[0]) if result else ChannelMode.FREE
+        cur.close()
+        conn.close()
+
+        message_text = slack_params['text']
+        if slack_params['channel_name'] == 'directmessage':
+            message_text = '<REDACTED>'
+        
+        # For restricted channels, check message appropriateness
+        if channel_mode == ChannelMode.RESTRICTED:
+            # Use asyncio to run the async OpenAI call
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(generate_response(message_text))
+                if result.strip() == "1":  # Message is inappropriate
+                    delayed_response = {
+                        'response_type': 'ephemeral',
+                        'text': "Sorry, your message was flagged as inappropriate and won't be posted."
+                    }
+                    requests.post(slack_params['response_url'], json=delayed_response)
+                    return
+            finally:
+                loop.close()
+
+        # Store message in database
         store_message(
-            slack_params['text'] if slack_params['channel_name'] != 'directmessage' else '<REDACTED>',
+            message_text,
             slack_params['user_id'],
             slack_params['channel_id'],
             slack_params['channel_name']
@@ -56,7 +89,7 @@ class handler(BaseHTTPRequestHandler):
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
-            'text': slack_params['text']
+            'text': message_text
         }
         requests.post(
             slack_params['response_url'],
