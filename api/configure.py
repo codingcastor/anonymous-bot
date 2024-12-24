@@ -33,6 +33,20 @@ def verify_slack_request(timestamp, body, signature):
     return hmac.compare_digest(my_signature, signature)
 
 
+def is_admin(user_id):
+    """Check if a user is an admin"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute('SELECT EXISTS(SELECT 1 FROM admin_users WHERE user_id = %s)', (user_id,))
+    is_admin = cur.fetchone()[0]
+    
+    cur.close()
+    conn.close()
+    
+    return is_admin
+
+
 def update_channel_mode(channel_id, mode):
     """Update or insert channel configuration"""
     if not isinstance(mode, ChannelMode):
@@ -77,7 +91,20 @@ class handler(BaseHTTPRequestHandler):
             'response_url': params.get('response_url', [''])[0],
             'channel_id': params.get('channel_id', [''])[0],
             'channel_name': params.get('channel_name', [''])[0],
+            'user_id': params.get('user_id', [''])[0],
         }
+
+        # Check if user is admin
+        if not is_admin(slack_params['user_id']):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                'response_type': 'ephemeral',
+                'text': "Sorry, only administrators can configure channel modes."
+            }
+            self.wfile.write(bytes(str(response), 'utf-8'))
+            return
 
         # Validate the mode
         try:
