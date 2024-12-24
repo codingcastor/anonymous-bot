@@ -71,7 +71,7 @@ class handler(BaseHTTPRequestHandler):
                 if result.strip() == "1":  # Message is inappropriate
                     delayed_response = {
                         'response_type': 'ephemeral',
-                        'text': "Sorry, your message was flagged as inappropriate and won't be posted."
+                        'text': "Désolé, ton message a été marqué comme inapproprié et ne sera pas posté."
                     }
                     requests.post(slack_params['response_url'], json=delayed_response)
                     return
