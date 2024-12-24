@@ -2,47 +2,10 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-import psycopg2
-from datetime import datetime
-import hmac
-import hashlib
-
-
-def get_db_connection():
-    """Get a PostgreSQL database connection"""
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
-
-
-def verify_slack_request(timestamp, body, signature):
-    """Verify that the request actually came from Slack"""
-    if abs(datetime.now().timestamp() - int(timestamp)) > 60 * 5:
-        # The request timestamp is more than five minutes from local time.
-        # It could be a replay attack, so let's ignore it.
-        return False
-
-    sig_basestring = f"v0:{timestamp}:{body}".encode('utf-8')
-    my_signature = 'v0=' + hmac.new(
-        os.getenv('SLACK_SIGNING_SECRET').encode('utf-8'),
-        sig_basestring,
-        hashlib.sha256
-    ).hexdigest()
-
-    return hmac.compare_digest(my_signature, signature)
-
-
-def store_message(text, user_id, channel_id, channel_name):
-    """Store a new message in the database"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute('''
-        INSERT INTO messages (text, user_id, channel_id, channel_name, created_at)
-        VALUES (%s, %s, %s, %s, %s)
-    ''', (text, user_id, channel_id, channel_name, datetime.now()))
-
-    conn.commit()
-    cur.close()
-    conn.close()
+from lib.database import store_message, get_channel_mode
+from lib.slack import verify_slack_request
+from lib.openai import generate_response
+from lib.types import ChannelMode
 
 
 class handler(BaseHTTPRequestHandler):
@@ -78,15 +41,30 @@ class handler(BaseHTTPRequestHandler):
             'api_app_id': params.get('api_app_id', [''])[0]
         }
 
-        # Send immediate empty 200 response
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(b'')
+        # Get channel mode and prepare message text
+        channel_mode = get_channel_mode(slack_params['channel_id'])
+        message_text = slack_params['text']
+        if slack_params['channel_name'] == 'directmessage':
+            message_text = '<REDACTED>'
 
-        # Store text in database only if it is not a private message
+        # For restricted channels, check message appropriateness
+        if channel_mode == ChannelMode.RESTRICTED:
+            result = generate_response(message_text)
+            if result.strip() == "1":  # Message is inappropriate
+                delayed_response = {
+                    'response_type': 'ephemeral',
+                    'text': "Désolé, ce canal est en mode restreint et ton message a été identifié comme inapproprié, il ne sera pas posté."
+                }
+                # Send immediate empty 200 response
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(bytes(str(delayed_response), 'utf-8'))
+                return
+
+        # Store message in database
         store_message(
-            slack_params['text'] if slack_params['channel_name'] != 'directmessage' else '<REDACTED>',
+            message_text,
             slack_params['user_id'],
             slack_params['channel_id'],
             slack_params['channel_name']
@@ -95,10 +73,17 @@ class handler(BaseHTTPRequestHandler):
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
-            'text': slack_params['text']
+            'text': message_text
         }
         requests.post(
             slack_params['response_url'],
             json=delayed_response
         )
+
+        # Send immediate empty 200 response
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'')
+
         return
