@@ -3,7 +3,7 @@ import requests
 from urllib.parse import parse_qs
 import os
 import asyncio
-from lib.database import store_message, get_db_connection
+from lib.database import store_message, get_channel_mode
 from lib.slack import verify_slack_request
 from lib.openai import generate_response
 from lib.types import ChannelMode
@@ -48,15 +48,8 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'')
 
-        # Get channel mode
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('SELECT mode FROM channel_configs WHERE channel_id = %s', (slack_params['channel_id'],))
-        result = cur.fetchone()
-        channel_mode = ChannelMode(result[0]) if result else ChannelMode.FREE
-        cur.close()
-        conn.close()
-
+        # Get channel mode and prepare message text
+        channel_mode = get_channel_mode(slack_params['channel_id'])
         message_text = slack_params['text']
         if slack_params['channel_name'] == 'directmessage':
             message_text = '<REDACTED>'
