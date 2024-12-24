@@ -2,6 +2,7 @@ import os
 import hmac
 import hashlib
 from datetime import datetime
+from .database import get_db_connection
 
 def verify_slack_request(timestamp, body, signature):
     """Verify that the request actually came from Slack"""
