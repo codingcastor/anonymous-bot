@@ -2,32 +2,9 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-import psycopg2
 from datetime import datetime
-import hmac
-import hashlib
-
-
-def get_db_connection():
-    """Get a PostgreSQL database connection"""
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
-
-
-def verify_slack_request(timestamp, body, signature):
-    """Verify that the request actually came from Slack"""
-    if abs(datetime.now().timestamp() - int(timestamp)) > 60 * 5:
-        # The request timestamp is more than five minutes from local time.
-        # It could be a replay attack, so let's ignore it.
-        return False
-
-    sig_basestring = f"v0:{timestamp}:{body}".encode('utf-8')
-    my_signature = 'v0=' + hmac.new(
-        os.getenv('SLACK_SIGNING_SECRET').encode('utf-8'),
-        sig_basestring,
-        hashlib.sha256
-    ).hexdigest()
-
-    return hmac.compare_digest(my_signature, signature)
+from lib.database import get_db_connection
+from lib.slack import verify_slack_request
 
 
 def store_message(text, user_id, channel_id, channel_name):

@@ -1,71 +1,9 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 import os
-import psycopg2
-from datetime import datetime
-import hmac
-import hashlib
-from enum import Enum
-
-
-class ChannelMode(Enum):
-    RESTRICTED = "RESTRICTED"
-    FREE = "FREE"
-
-
-def get_db_connection():
-    """Get a PostgreSQL database connection"""
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
-
-
-def verify_slack_request(timestamp, body, signature):
-    """Verify that the request actually came from Slack"""
-    if abs(datetime.now().timestamp() - int(timestamp)) > 60 * 5:
-        return False
-
-    sig_basestring = f"v0:{timestamp}:{body}".encode('utf-8')
-    my_signature = 'v0=' + hmac.new(
-        os.getenv('SLACK_SIGNING_SECRET').encode('utf-8'),
-        sig_basestring,
-        hashlib.sha256
-    ).hexdigest()
-
-    return hmac.compare_digest(my_signature, signature)
-
-
-def is_admin(user_id):
-    """Check if a user is an admin"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    cur.execute('SELECT EXISTS(SELECT 1 FROM admin_users WHERE user_id = %s)', (user_id,))
-    is_admin = cur.fetchone()[0]
-    
-    cur.close()
-    conn.close()
-    
-    return is_admin
-
-
-def update_channel_mode(channel_id, mode):
-    """Update or insert channel configuration"""
-    if not isinstance(mode, ChannelMode):
-        raise ValueError("Mode must be a ChannelMode enum value")
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # Using upsert (INSERT ... ON CONFLICT DO UPDATE)
-    cur.execute('''
-        INSERT INTO channel_configs (channel_id, mode, updated_at)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (channel_id) 
-        DO UPDATE SET mode = EXCLUDED.mode, updated_at = EXCLUDED.updated_at
-    ''', (channel_id, mode.value, datetime.now()))
-
-    conn.commit()
-    cur.close()
-    conn.close()
+from lib.slack import verify_slack_request, is_admin
+from lib.channel import update_channel_mode
+from lib.types import ChannelMode
 
 
 class handler(BaseHTTPRequestHandler):
