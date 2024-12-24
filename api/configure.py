@@ -1,5 +1,4 @@
 from http.server import BaseHTTPRequestHandler
-import requests
 from urllib.parse import parse_qs
 import os
 import psycopg2
