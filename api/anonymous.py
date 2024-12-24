@@ -51,14 +51,15 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
 
-        # Verify request is from Slack
-        timestamp = self.headers.get('X-Slack-Request-Timestamp')
-        signature = self.headers.get('X-Slack-Signature')
+        # Verify request is from Slack only in production
+        if os.getenv('VERCEL_ENV') == 'production':
+            timestamp = self.headers.get('X-Slack-Request-Timestamp')
+            signature = self.headers.get('X-Slack-Signature')
 
-        if not timestamp or not signature or not verify_slack_request(timestamp, post_data, signature):
-            self.send_response(401)
-            self.end_headers()
-            return
+            if not timestamp or not signature or not verify_slack_request(timestamp, post_data, signature):
+                self.send_response(401)
+                self.end_headers()
+                return
 
         # Parse form data
         params = parse_qs(post_data)
