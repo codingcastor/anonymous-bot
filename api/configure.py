@@ -79,7 +79,7 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         response = {
-            'response_type': 'in_channel',
+            'response_type': 'ephemeral',
             'text': f"Channel mode has been set to: {mode.value}"
         }
         self.wfile.write(bytes(str(response), 'utf-8'))
