@@ -8,7 +8,7 @@ def get_openai_client():
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     return OpenAI(api_key=api_key)
 
-async def generate_response(prompt, max_tokens=150):
+def generate_response(prompt, max_tokens=150):
     """Generate a response using GPT-4o-mini
     
     Args:
@@ -21,7 +21,7 @@ async def generate_response(prompt, max_tokens=150):
     client = get_openai_client()
     
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "developer", "content": """Ta tâche est d'agir en tant que modérateur de contenu. Analyse le message suivant d'un utilisateur de messagerie et classe le selon les critères suivants :
@@ -31,7 +31,7 @@ Retourne seulement le numéro correspondant (1 or 0). Toute information supplém
 """},
                 {"role": "user", "content": prompt}
             ],
-            max_completion_token=max_tokens,
+            max_completion_tokens=max_tokens,
         )
         return response.choices[0].message.content
     except Exception as e:

@@ -2,7 +2,6 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-import asyncio
 from lib.database import store_message, get_channel_mode
 from lib.slack import verify_slack_request
 from lib.openai import generate_response
@@ -42,34 +41,26 @@ class handler(BaseHTTPRequestHandler):
             'api_app_id': params.get('api_app_id', [''])[0]
         }
 
-        # Send immediate empty 200 response
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(b'')
-
         # Get channel mode and prepare message text
         channel_mode = get_channel_mode(slack_params['channel_id'])
         message_text = slack_params['text']
         if slack_params['channel_name'] == 'directmessage':
             message_text = '<REDACTED>'
-        
+
         # For restricted channels, check message appropriateness
         if channel_mode == ChannelMode.RESTRICTED:
-            # Use asyncio to run the async OpenAI call
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(generate_response(message_text))
-                if result.strip() == "1":  # Message is inappropriate
-                    delayed_response = {
-                        'response_type': 'ephemeral',
-                        'text': "Désolé, ton message a été marqué comme inapproprié et ne sera pas posté."
-                    }
-                    requests.post(slack_params['response_url'], json=delayed_response)
-                    return
-            finally:
-                loop.close()
+            result = generate_response(message_text)
+            if result.strip() == "1":  # Message is inappropriate
+                delayed_response = {
+                    'response_type': 'ephemeral',
+                    'text': "Désolé, ce canal est en mode restreint et ton message a été identifié comme inapproprié, il ne sera pas posté."
+                }
+                # Send immediate empty 200 response
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(bytes(str(delayed_response), 'utf-8'))
+                return
 
         # Store message in database
         store_message(
@@ -88,4 +79,11 @@ class handler(BaseHTTPRequestHandler):
             slack_params['response_url'],
             json=delayed_response
         )
+
+        # Send immediate empty 200 response
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'')
+
         return
