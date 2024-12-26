@@ -78,3 +78,24 @@ def get_channel_mode(channel_id):
     conn.close()
     
     return channel_mode
+
+
+def store_inappropriate_message(text, channel_id, channel_name):
+    """Store an inappropriate message in the dedicated table
+    
+    Args:
+        text (str): The message content
+        channel_id (str): The Slack channel ID
+        channel_name (str): The Slack channel name
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute('''
+        INSERT INTO inappropriate_messages (message_text, channel_id, channel_name, created_at)
+        VALUES (%s, %s, %s, %s)
+    ''', (text, channel_id, channel_name, datetime.now()))
+
+    conn.commit()
+    cur.close()
+    conn.close()

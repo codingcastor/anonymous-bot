@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import requests
 from urllib.parse import parse_qs
 import os
-from lib.database import store_message, get_channel_mode
+from lib.database import store_message, get_channel_mode, store_inappropriate_message
 from lib.slack import verify_slack_request
 from lib.openai import generate_response
 from lib.types import ChannelMode
@@ -51,6 +51,13 @@ class handler(BaseHTTPRequestHandler):
         if channel_mode == ChannelMode.RESTRICTED:
             result = generate_response(message_text)
             if result.strip() == "1":  # Message is inappropriate
+                # Store the inappropriate message
+                store_inappropriate_message(
+                    message_text,
+                    slack_params['channel_id'],
+                    slack_params['channel_name']
+                )
+                
                 delayed_response = {
                     'response_type': 'ephemeral',
                     'text': "Désolé, ce canal est en mode restreint et ton message a été identifié comme inapproprié, il ne sera pas posté."
