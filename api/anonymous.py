@@ -44,8 +44,9 @@ class handler(BaseHTTPRequestHandler):
         # Get channel mode and prepare message text
         channel_mode = get_channel_mode(slack_params['channel_id'])
         message_text = slack_params['text']
+        stored_message_text = message_text
         if slack_params['channel_name'] == 'directmessage':
-            message_text = '<REDACTED>'
+            stored_message_text = '<REDACTED>'
 
         # For restricted channels, check message appropriateness
         if channel_mode == ChannelMode.RESTRICTED:
@@ -71,7 +72,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Store message in database
         store_message(
-            message_text,
+            stored_message_text,
             slack_params['user_id'],
             slack_params['channel_id'],
             slack_params['channel_name']
