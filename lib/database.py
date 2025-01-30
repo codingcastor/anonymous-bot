@@ -59,20 +59,20 @@ def is_admin(user_id):
 
 
 def get_channel_mode(channel_id):
-    """Get the mode for a channel, defaults to FREE if not configured
+    """Get the mode for a channel, defaults to DISABLED if not configured
     
     Args:
         channel_id (str): The Slack channel ID
         
     Returns:
-        ChannelMode: The channel's mode (FREE if not configured)
+        ChannelMode: The channel's mode (DISABLED if not configured)
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
     cur.execute('SELECT mode FROM channel_configs WHERE channel_id = %s', (channel_id,))
     result = cur.fetchone()
-    channel_mode = ChannelMode(result[0]) if result else ChannelMode.FREE
+    channel_mode = ChannelMode(result[0]) if result else ChannelMode.DISABLED
     
     cur.close()
     conn.close()

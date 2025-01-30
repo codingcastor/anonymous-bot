@@ -43,6 +43,19 @@ class handler(BaseHTTPRequestHandler):
 
         # Get channel mode and prepare message text
         channel_mode = get_channel_mode(slack_params['channel_id'])
+        
+        # Check if channel mode is enabled
+        if channel_mode not in (ChannelMode.FREE, ChannelMode.RESTRICTED):
+            response = {
+                'response_type': 'ephemeral',
+                'text': "❌ Ce bot n'est pas activé dans ce canal. Veuillez contacter l'administrateur de votre espace de travail si vous pensez qu'il s'agit d'une erreur."
+            }
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(bytes(str(response), 'utf-8'))
+            return
+
         message_text = slack_params['text']
         stored_message_text = message_text
         if slack_params['channel_name'] == 'directmessage':
