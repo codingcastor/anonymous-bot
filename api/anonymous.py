@@ -88,7 +88,8 @@ class handler(BaseHTTPRequestHandler):
             stored_message_text,
             slack_params['user_id'],
             slack_params['channel_id'],
-            slack_params['channel_name']
+            slack_params['channel_name'],
+            slack_params['response_url']
         )
 
         # Send delayed response to response_url

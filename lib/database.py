@@ -29,15 +29,15 @@ def update_channel_mode(channel_id, mode):
     conn.close()
 
 
-def store_message(text, user_id, channel_id, channel_name):
+def store_message(text, user_id, channel_id, channel_name, response_url):
     """Store a new message in the database"""
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute('''
-        INSERT INTO messages (text, user_id, channel_id, channel_name, created_at)
-        VALUES (%s, %s, %s, %s, %s)
-    ''', (text, user_id, channel_id, channel_name, datetime.now()))
+        INSERT INTO messages (text, user_id, channel_id, channel_name, response_url, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    ''', (text, user_id, channel_id, channel_name, response_url, datetime.now()))
 
     conn.commit()
     cur.close()
