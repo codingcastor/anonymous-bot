@@ -9,7 +9,8 @@ from lib.openai import generate_response
 from lib.types import ChannelMode
 
 # Special channel ID for BMT
-SPECIAL_CHANNEL_ID = "C040N4UB458"
+#SPECIAL_CHANNEL_ID = "C040N4UB458"
+SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
