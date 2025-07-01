@@ -1,6 +1,7 @@
 import os
 import hmac
 import hashlib
+import requests
 from datetime import datetime
 
 def verify_slack_request(timestamp, body, signature):
@@ -16,4 +17,34 @@ def verify_slack_request(timestamp, body, signature):
     ).hexdigest()
 
     return hmac.compare_digest(my_signature, signature)
+
+
+def send_direct_message(user_id, message):
+    """Send a direct message to a Slack user
+    
+    Args:
+        user_id (str): The Slack user ID to send the message to
+        message (str): The message content to send
+        
+    Returns:
+        bool: True if message was sent successfully, False otherwise
+    """
+    try:
+        response = requests.post(
+            'https://slack.com/api/chat.postMessage',
+            headers={
+                'Authorization': f'Bearer {os.getenv("SLACK_BOT_TOKEN")}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'channel': user_id,
+                'text': message
+            }
+        )
+        
+        result = response.json()
+        return result.get('ok', False)
+    except Exception as e:
+        print(f"Error sending direct message: {e}")
+        return False
 
