@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 import os
 import json
 from lib.database import store_message, get_channel_mode, store_inappropriate_message
-from lib.slack import verify_slack_request, send_direct_message
+from lib.slack import verify_slack_request
 from lib.openai import generate_response
 from lib.types import ChannelMode
 

@@ -48,14 +48,29 @@ class handler(BaseHTTPRequestHandler):
             button_clicker_id = payload.get('user', {}).get('id')
             
             if original_poster_id and button_clicker_id:
-                # Send direct message to the original poster
-                message = f"Hey! Someone wants you to come play! 🎮"
+                # Envoyer un message privé à l'auteur original
+                message = f"Hé ! Quelqu'un veut que tu viennes jouer ! 🎮"
                 send_direct_message(original_poster_id, message)
                 
-                # Send confirmation to the button clicker
+                # Update the original message in place - remove the button but keep the original content
+                # Get the original message text from the payload
+                original_message = payload.get('message', {})
+                original_text = original_message.get('text', '')
+                
+                # Create response that updates the message in place without the button
                 response = {
-                    'response_type': 'ephemeral',
-                    'text': "✅ Message envoyé !"
+                    'response_type': 'in_channel',
+                    'replace_original': True,
+                    'text': original_text,
+                    'blocks': [
+                        {
+                            'type': 'section',
+                            'text': {
+                                'type': 'mrkdwn',
+                                'text': original_text
+                            }
+                        }
+                    ]
                 }
                 
                 self.send_response(200)
