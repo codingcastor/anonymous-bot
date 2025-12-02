@@ -3,7 +3,7 @@ import requests
 from urllib.parse import parse_qs
 import os
 import json
-from lib.database import store_message, get_channel_mode, store_inappropriate_message
+from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo
 from lib.slack import verify_slack_request
 from lib.openai import generate_response
 from lib.types import ChannelMode
@@ -101,10 +101,13 @@ class handler(BaseHTTPRequestHandler):
             slack_params['response_url']
         )
 
+        # Get pseudo for the user
+        pseudo = get_or_assign_pseudo(slack_params['user_id'], slack_params['channel_id'])
+
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
-            'text': message_text
+            'text': f"({pseudo}) {message_text}"
         }
         requests.post(
             slack_params['response_url'],
