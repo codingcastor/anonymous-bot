@@ -5,13 +5,14 @@ from urllib.parse import parse_qs
 import os
 import json
 from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo, get_user_by_pseudo, get_known_pseudos
-from lib.slack import verify_slack_request, send_direct_message
+from lib.slack import verify_slack_request
 from lib.openai import generate_response
 from lib.types import ChannelMode
 
 # Special channel ID for BMT
 #SPECIAL_CHANNEL_ID = "C040N4UB458"
-SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
+#SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
+SPECIAL_CHANNEL_ID = "TEST"
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -114,7 +115,8 @@ class handler(BaseHTTPRequestHandler):
                 if known_pseudo.lower() == mentioned_pseudo.lower():
                     target_user_id = get_user_by_pseudo(known_pseudo, slack_params['channel_id'])
                     print(target_user_id)
-                    if target_user_id and target_user_id != slack_params['user_id']:
+                    #if target_user_id and target_user_id != slack_params['user_id']:
+                    if target_user_id:
                         res = send_direct_message(
                             target_user_id,
                             f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_name']} !\n\n> {message_text}"
