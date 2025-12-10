@@ -1,10 +1,11 @@
 from http.server import BaseHTTPRequestHandler
 import requests
+import re
 from urllib.parse import parse_qs
 import os
 import json
-from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo
-from lib.slack import verify_slack_request
+from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo, get_user_by_pseudo, get_known_pseudos
+from lib.slack import verify_slack_request, send_direct_message
 from lib.openai import generate_response
 from lib.types import ChannelMode
 
@@ -103,6 +104,20 @@ class handler(BaseHTTPRequestHandler):
 
         # Get pseudo for the user
         pseudo = get_or_assign_pseudo(slack_params['user_id'], slack_params['channel_id'])
+
+        # Detect @Pseudo mentions and notify users
+        mentioned_pseudos = re.findall(r'@(\w+)', message_text)
+        for mentioned_pseudo in mentioned_pseudos:
+            # Look up the user who owns this pseudo (case-insensitive match)
+            for known_pseudo in get_known_pseudos():
+                if known_pseudo.lower() == mentioned_pseudo.lower():
+                    target_user_id = get_user_by_pseudo(known_pseudo, slack_params['channel_id'])
+                    if target_user_id and target_user_id != slack_params['user_id']:
+                        send_direct_message(
+                            target_user_id,
+                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_name']} !\n\n> {message_text}"
+                        )
+                    break
 
         # Send delayed response to response_url
         delayed_response = {

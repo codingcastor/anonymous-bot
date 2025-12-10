@@ -182,3 +182,40 @@ def get_or_assign_pseudo(user_id, channel_id, validity_hours=1) -> str:
     conn.close()
 
     return new_pseudo
+
+
+def get_user_by_pseudo(pseudo, channel_id, validity_hours=1) -> str | None:
+    """Get user_id by pseudo in a channel if the pseudo is still valid
+    
+    Args:
+        pseudo (str): The pseudo to look up
+        channel_id (str): The Slack channel ID
+        validity_hours (int): How long a pseudo remains valid
+        
+    Returns:
+        str | None: The user_id if found and valid, None otherwise
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    expiry = datetime.now() - timedelta(hours=validity_hours)
+
+    cur.execute(
+        'SELECT user_id FROM pseudos WHERE pseudo = %s AND channel_id = %s AND last_used > %s',
+        (pseudo, channel_id, expiry)
+    )
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return result[0] if result else None
+
+
+def get_known_pseudos() -> list:
+    """Get the list of all known pseudos
+    
+    Returns:
+        list: The list of pseudos
+    """
+    return PSEUDOS
