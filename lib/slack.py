@@ -43,6 +43,7 @@ def send_direct_message(user_id, message):
         )
         
         result = response.json()
+        print(result)
         return result.get('ok', False)
     except Exception as e:
         print(f"Error sending direct message: {e}")
