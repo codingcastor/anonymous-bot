@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 import os
 import json
 from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo, get_user_by_pseudo, get_known_pseudos
-from lib.slack import verify_slack_request
+from lib.slack import verify_slack_request, send_direct_message
 from lib.openai import generate_response
 from lib.types import ChannelMode
 
