@@ -115,10 +115,11 @@ class handler(BaseHTTPRequestHandler):
                     target_user_id = get_user_by_pseudo(known_pseudo, slack_params['channel_id'])
                     print(target_user_id)
                     if target_user_id and target_user_id != slack_params['user_id']:
-                        send_direct_message(
+                        res = send_direct_message(
                             target_user_id,
                             f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_name']} !\n\n> {message_text}"
                         )
+                        print(res)
                     break
 
         # Send delayed response to response_url
