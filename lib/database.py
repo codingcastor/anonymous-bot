@@ -131,7 +131,7 @@ PSEUDOS = [
     "Parsec", "Proton", "Hexa", "Mono", "Quark", "Unity", "Astro", "Pulse", "Spectra", "Optima",
     "Modulo", "Voxel", "Turbo", "Synchro", "Kappa", "Orbiton", "Pixel", "Numa", "Ionix", "Scalar",
     "Kronos", "Solis", "Lumen", "Holo", "Aero", "Ionis"
-] 
+]
 def get_or_assign_pseudo(user_id, channel_id, validity_hours=1) -> str:
     """Get or assign a pseudo for a user in a channel"""
     conn = get_db_connection()

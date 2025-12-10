@@ -11,8 +11,7 @@ from lib.types import ChannelMode
 
 # Special channel ID for BMT
 #SPECIAL_CHANNEL_ID = "C040N4UB458"
-#SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
-SPECIAL_CHANNEL_ID = "TEST"
+SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -108,20 +107,16 @@ class handler(BaseHTTPRequestHandler):
 
         # Detect @Pseudo mentions and notify users
         mentioned_pseudos = re.findall(r'@(\w+)', message_text)
-        print(mentioned_pseudos)
         for mentioned_pseudo in mentioned_pseudos:
             # Look up the user who owns this pseudo (case-insensitive match)
             for known_pseudo in get_known_pseudos():
                 if known_pseudo.lower() == mentioned_pseudo.lower():
                     target_user_id = get_user_by_pseudo(known_pseudo, slack_params['channel_id'])
-                    print(target_user_id)
-                    #if target_user_id and target_user_id != slack_params['user_id']:
-                    if target_user_id:
+                    if target_user_id and target_user_id != slack_params['user_id']:
                         res = send_direct_message(
                             target_user_id,
-                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_name']} !\n\n> {message_text}"
+                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_id']} !\n\n> {message_text}"
                         )
-                        print(res)
                     break
 
         # Send delayed response to response_url

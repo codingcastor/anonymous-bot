@@ -33,10 +33,10 @@ def send_direct_message(user_id, message):
         response = requests.post(
             'https://slack.com/api/chat.postMessage',
             headers={
-                'Authorization': f'Bearer {os.getenv("SLACK_BOT_TOKEN")}',
                 'Content-Type': 'application/json'
             },
             json={
+                'token': os.getenv("SLACK_BOT_TOKEN"),
                 'channel': user_id,
                 'text': message
             }
