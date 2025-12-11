@@ -4,13 +4,24 @@ import re
 from urllib.parse import parse_qs
 import os
 import json
+from datetime import datetime
 from lib.database import store_message, get_channel_mode, store_inappropriate_message, get_or_assign_pseudo, get_user_by_pseudo, get_known_pseudos
 from lib.slack import verify_slack_request, send_direct_message
 from lib.openai import generate_response
 from lib.types import ChannelMode
 
+
+def is_april_fools():
+    """Check if today is April 1st"""
+    today = datetime.now()
+    return today.month == 4 and today.day == 1
+
 # Special channel ID for BMT
+# It's a WIP feature that add a button to notify the original poster of a "BMT ?" or "+1" message
+# It doesn't work because the `send_direct_message` seems to fail in this case
+# BMT channel
 #SPECIAL_CHANNEL_ID = "C040N4UB458"
+# raph's channel
 SPECIAL_CHANNEL_ID = "D06TJMZ7N7N"
 
 class handler(BaseHTTPRequestHandler):
@@ -105,6 +116,11 @@ class handler(BaseHTTPRequestHandler):
         # Get pseudo for the user
         pseudo = get_or_assign_pseudo(slack_params['user_id'], slack_params['channel_id'])
 
+        # April Fools' Day easter egg: use real username and add fish emoji
+        april_fools = is_april_fools()
+        display_name = slack_params['user_name'] if april_fools else pseudo
+        message_suffix = " 🐟" if april_fools else ""
+
         # Detect @Pseudo mentions and notify users
         mentioned_pseudos = re.findall(r'@(\w+)', message_text)
         for mentioned_pseudo in mentioned_pseudos:
@@ -115,14 +131,14 @@ class handler(BaseHTTPRequestHandler):
                     if target_user_id and target_user_id != slack_params['user_id']:
                         res = send_direct_message(
                             target_user_id,
-                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal <#{slack_params['channel_id']}> !\n\n> {message_text}"
+                            f"🔔 *{display_name}* t'a mentionné dans un message anonyme dans le canal <#{slack_params['channel_id']}> !\n\n> {message_text}"
                         )
                     break
 
         # Send delayed response to response_url
         delayed_response = {
             'response_type': 'in_channel',
-            'text': f"*{pseudo}* : {message_text}"
+            'text': f"*{display_name}* : {message_text}{message_suffix}"
         }
         requests.post(
             slack_params['response_url'],
