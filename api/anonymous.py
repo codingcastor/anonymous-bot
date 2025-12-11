@@ -115,7 +115,7 @@ class handler(BaseHTTPRequestHandler):
                     if target_user_id and target_user_id != slack_params['user_id']:
                         res = send_direct_message(
                             target_user_id,
-                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal #{slack_params['channel_id']} !\n\n> {message_text}"
+                            f"🔔 *{pseudo}* t'a mentionné dans un message anonyme dans le canal <#{slack_params['channel_id']}> !\n\n> {message_text}"
                         )
                     break
 
