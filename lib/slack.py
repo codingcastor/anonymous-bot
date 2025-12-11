@@ -48,3 +48,35 @@ def send_direct_message(user_id, message):
         print(f"Error sending direct message: {e}")
         return False
 
+
+def update_message_via_response_url(response_url, text, blocks=None, replace_original=True):
+    """Update a Slack message using the response_url
+    
+    Args:
+        response_url (str): The response_url from the Slack payload
+        text (str): The new message text
+        blocks (list, optional): The new message blocks
+        replace_original (bool): Whether to replace the original message
+        
+    Returns:
+        bool: True if message was updated successfully, False otherwise
+    """
+    try:
+        payload = {
+            'replace_original': replace_original,
+            'text': text
+        }
+        if blocks:
+            payload['blocks'] = blocks
+            
+        response = requests.post(
+            response_url,
+            headers={'Content-Type': 'application/json'},
+            json=payload
+        )
+        
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error updating message via response_url: {e}")
+        return False
+

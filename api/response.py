@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 import os
 import json
-from lib.slack import verify_slack_request, send_direct_message
+from lib.slack import verify_slack_request, send_direct_message, update_message_via_response_url
 
 
 class handler(BaseHTTPRequestHandler):
@@ -52,17 +52,15 @@ class handler(BaseHTTPRequestHandler):
                 message = f"Hé ! Quelqu'un veut que tu viennes jouer ! 🎮"
                 send_direct_message(original_poster_id, message)
                 
-                # Update the original message in place - remove the button but keep the original content
-                # Get the original message text from the payload
-                original_message = payload.get('message', {})
-                original_text = original_message.get('text', '')
-                
-                # Create response that updates the message in place without the button
-                response = {
-                    'response_type': 'in_channel',
-                    'replace_original': True,
-                    'text': original_text,
-                    'blocks': [
+                # Update the original message using response_url
+                response_url = payload.get('response_url')
+                if response_url:
+                    # Get the original message text from the payload
+                    original_message = payload.get('message', {})
+                    original_text = original_message.get('text', '')
+                    
+                    # Update the message in place without the button
+                    blocks = [
                         {
                             'type': 'section',
                             'text': {
@@ -71,12 +69,10 @@ class handler(BaseHTTPRequestHandler):
                             }
                         }
                     ]
-                }
+                    update_message_via_response_url(response_url, original_text, blocks)
                 
                 self.send_response(200)
-                self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(bytes(json.dumps(response), 'utf-8'))
                 return
 
         # Default response for unhandled interactions
